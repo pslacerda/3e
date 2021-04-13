@@ -25,10 +25,10 @@ export class CustomerController {
 
   @Get(':id')
   async findOne(
-      @Param('id') id: string
+      @Param('id') id: number
   ): Promise<Customer> {
     console.log(id);
-    return await this.customerRepository.findOneOrFail({id: parseInt(id)});
+    return await this.customerRepository.findOneOrFail({id: id});
   }
 
   @Put()
