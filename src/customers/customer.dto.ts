@@ -24,7 +24,10 @@ export class UpdateCustomerDto {
 export class QueryDto {
     @ApiProperty()
     query: string
+}
 
+
+export class PaginatedQueryDto extends QueryDto {
     @ApiProperty({
         minimum: 0
     })
