@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { CreateCustomerDto, QueryDto } from './customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from './customer.entities';
 import { Like, Repository } from 'typeorm';
-
+import { trigram, tanimoto } from '../utils'
 
 @Controller('customers')
 export class CustomerController {
@@ -12,8 +12,8 @@ export class CustomerController {
     private customerRepository: Repository<Customer>,
   ) { }
 
-  @Post()
-  async findAll(
+  @Post('likeSQL')
+  async findLike(
       @Body() body: QueryDto,
   ): Promise<Customer[]> {
     return await this.customerRepository.find({
@@ -23,12 +23,30 @@ export class CustomerController {
     });
   }
 
+  @Post('trigramSimilarity')
+  async findTrigram(
+    @Body() body: QueryDto,
+  ) {
+    const query = trigram(body.query);
+    return (await this.customerRepository.find())
+                      .map(customer => {
+                        return {
+                          similarity: tanimoto(query, trigram(customer.name)),
+                          ...customer
+                      }});
+
+
+  }
+
   @Get(':id')
   async findOne(
       @Param('id') id: number
   ): Promise<Customer> {
-    console.log(id);
-    return await this.customerRepository.findOneOrFail({id: id});
+    const customer = await this.customerRepository.findOne({id: id});
+    if (!customer) {
+      throw new BadRequestException('Invalid customer');
+    }
+    return customer;
   }
 
   @Put()
