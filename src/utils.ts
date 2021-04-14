@@ -13,8 +13,8 @@ export function trigram(text: string): Set<string> {
 }
 
 
-export function tanimoto<T>(a: Set<T>, b: Set<T>) {
-    const intersection = new Set([...a].filter(x => b.has(x)));
-    const union = new Set([...a, ...b]);
+export function tanimoto<T>(a: Set<T>, b: Set<T>): number {
+    const intersection = new Set<T>([...a].filter(x => b.has(x)));
+    const union = new Set<T>([...a, ...b]);
     return intersection.size / union.size;
 }
