@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Q
 import { CreateCustomerDto, PaginatedQueryDto, QueryDto } from './customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from './customer.entities';
-import { Like, Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { trigram, tanimoto } from '../utils'
 
 @Controller('customers')
@@ -12,12 +12,12 @@ export class CustomerController {
     private customerRepository: Repository<Customer>,
   ) { }
 
-  @Post('paginatedLikeSQL')
+  @Post('paginatedILikeSQL')
   async findLike(
       @Body() body: PaginatedQueryDto,
   ): Promise<Customer[]> {
     return await this.customerRepository.find({
-      where: { name: Like(body.query)},
+      where: { name: ILike(body.query)},
       take: body.take,
       skip: body.skip,
     });
