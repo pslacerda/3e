@@ -1,41 +1,40 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
-import { CreateCustomerDto, PaginatedQueryDto, QueryDto } from './customer.dto';
+import { CreateCustomerDto } from './customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from './customer.entities';
 import { ILike, Repository } from 'typeorm';
-import { trigram, tanimoto } from '../utils'
+import { TrigramSearchService } from './customer.service';
 
 @Controller('customers')
 export class CustomerController {
+
   constructor(
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+    private trigramSearch: TrigramSearchService
   ) { }
 
-  @Post('paginatedILikeSQL')
+  @Get('paginatedILikeSQL')
   async findLike(
-      @Body() body: PaginatedQueryDto,
+    @Query('query') query: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
   ): Promise<Customer[]> {
     return await this.customerRepository.find({
-      where: { name: ILike(body.query)},
-      take: body.take,
-      skip: body.skip,
+      where: { name: ILike(query)},
+      take: take,
+      skip: skip,
     });
   }
 
-  @Post('trigramSimilarity')
+  @Get('trigramSearch')
   async findTrigram(
-    @Body() body: QueryDto,
+    @Query('query') query: string,
   ) {
-    const query = trigram(body.query);
-    return (await this.customerRepository.find())
-                      .map(customer => {
-                        return {
-                          similarity: tanimoto(query, trigram(customer.name)),
-                          ...customer
-                      }});
-
-
+    if (query.length < 3) {
+      throw new BadRequestException('The query length is too short.');
+    }
+    return this.trigramSearch.search(query);
   }
 
   @Get(':id')
@@ -44,15 +43,15 @@ export class CustomerController {
   ): Promise<Customer> {
     const customer = await this.customerRepository.findOne({id: id});
     if (!customer) {
-      throw new BadRequestException('Invalid customer');
+      throw new BadRequestException('Invalid customer.');
     }
     return customer;
   }
 
-  @Put()
+  @Post()
   async create(
     @Body() body: CreateCustomerDto
-  ): Promise<CreateCustomerDto> {
+  ): Promise<Customer> {
     return await this.customerRepository.save(this.customerRepository.create(body));
   }
 
